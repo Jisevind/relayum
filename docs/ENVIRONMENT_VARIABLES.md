@@ -22,6 +22,7 @@ This document explains all the environment variables available in the Relayum Do
 ### JWT Configuration
 - **`JWT_SECRET`** - Secret key for JWT tokens (**REQUIRED** - 32+ characters)
 - **`JWT_REFRESH_SECRET`** - Secret key for refresh tokens (**REQUIRED** - 32+ characters)
+- **`METADATA_ENCRYPTION_KEY`** - File metadata encryption key (**REQUIRED** - 64 hex characters)
 
 ### Admin Account
 - **`ADMIN_USERNAME`** - Initial admin username (**REQUIRED**)
@@ -158,5 +159,22 @@ DISABLE_SECURITY_HEADERS=false
 ```
 
 ---
+
+## 🔒 Security Notes
+
+### Metadata Encryption
+Relayum v2.0+ encrypts sensitive file metadata (filenames, file types, master keys) for enhanced security:
+
+- **`METADATA_ENCRYPTION_KEY`** must be set for new installations
+- Generate with: `openssl rand -hex 32`
+- Existing installations need migration: `node scripts/migrate-metadata-encryption.js`
+- Missing this key will prevent file uploads and downloads
+
+### Key Generation
+```bash
+# Generate secure keys
+openssl rand -hex 32   # For JWT secrets
+openssl rand -hex 32   # For metadata encryption
+```
 
 **Note**: Environment variables marked as **REQUIRED** must be changed from their defaults for security. Variables with defaults will work out-of-the-box but can be customized as needed.
