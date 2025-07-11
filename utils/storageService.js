@@ -46,6 +46,37 @@ class StorageService {
   }
 
   /**
+   * Read and decrypt metadata file, handling both old and new formats
+   * @param {string} metadataFilePath - Path to metadata file
+   * @returns {Object} - Complete metadata object with decrypted sensitive data
+   */
+  async readMetadata(metadataFilePath) {
+    try {
+      const metadataContent = await fs.readFile(metadataFilePath, 'utf8');
+      const metadata = JSON.parse(metadataContent);
+      
+      // Check if this is the new encrypted format (version 2.0)
+      if (metadata.version === '2.0' && metadata.encryptedMetadata) {
+        // Decrypt sensitive metadata
+        const sensitiveMetadata = this.encryptionService.decryptMetadata(metadata.encryptedMetadata);
+        
+        // Combine public and decrypted sensitive metadata
+        return {
+          ...metadata,
+          ...sensitiveMetadata,
+          encryptedMetadata: undefined // Remove the encrypted blob from final result
+        };
+      } else {
+        // Legacy format (version 1.0) - return as-is but log a warning
+        console.warn(`Reading legacy unencrypted metadata file: ${metadataFilePath}`);
+        return metadata;
+      }
+    } catch (error) {
+      throw new Error(`Failed to read metadata: ${error.message}`);
+    }
+  }
+
+  /**
    * Get user's files directory path
    * @param {number} userId - User ID
    * @returns {string} - User files directory path
@@ -125,23 +156,31 @@ class StorageService {
         fileKey
       );
 
-      // Create metadata object with encryption keys
-      const metadata = {
-        fileId,
-        originalName,
-        mimeType,
-        originalSize,
-        encryptedSize: encryptionResult.size,
-        iv: encryptionResult.iv,
-        tag: encryptionResult.tag,
-        hash: encryptionResult.hash,
-        masterKey: masterKey.toString('hex'), // Store the key for system access
-        uploadedAt: new Date().toISOString(),
-        version: '1.0'
+      // Separate sensitive and non-sensitive metadata
+      const sensitiveMetadata = {
+        originalName,           // Hide actual filename
+        mimeType,              // Hide file type
+        originalSize,          // Hide original file size
+        masterKey: masterKey.toString('hex'), // Critical: encrypt the master key
+        originalNameHash: crypto.createHash('sha256').update(originalName).digest('hex') // For correlation without exposure
       };
 
-      // Store metadata as JSON (no need to encrypt since files are on isolated system)
-      await fs.writeFile(metadataFilePath, JSON.stringify(metadata, null, 2), 'utf8');
+      const publicMetadata = {
+        fileId,                // Keep for file system operations
+        encryptedSize: encryptionResult.size, // Encrypted size is not sensitive
+        iv: encryptionResult.iv,              // Encryption parameters (not secret)
+        tag: encryptionResult.tag,            // Authentication tag (not secret)
+        hash: encryptionResult.hash,          // File hash for integrity (not sensitive)
+        uploadedAt: new Date().toISOString(), // Timestamp (operational need)
+        version: '2.0',                       // Version for migration detection
+        encryptedMetadata: null               // Placeholder for encrypted data
+      };
+
+      // Encrypt sensitive metadata
+      publicMetadata.encryptedMetadata = this.encryptionService.encryptMetadata(sensitiveMetadata);
+
+      // Store only public metadata in plain text
+      await fs.writeFile(metadataFilePath, JSON.stringify(publicMetadata, null, 2), 'utf8');
 
       // Clean up source file
       try {
@@ -187,9 +226,8 @@ class StorageService {
         throw new Error('File not found');
       }
 
-      // Read metadata file (plain JSON with encryption keys)
-      const metadataContent = await fs.readFile(metadataFilePath, 'utf8');
-      const metadata = JSON.parse(metadataContent);
+      // Read and decrypt metadata file
+      const metadata = await this.readMetadata(metadataFilePath);
       
       // Get master key from metadata
       const masterKey = Buffer.from(metadata.masterKey, 'hex');
@@ -233,9 +271,8 @@ class StorageService {
         throw new Error('File not found');
       }
 
-      // Read metadata file (plain JSON with encryption keys)
-      const metadataContent = await fs.readFile(metadataFilePath, 'utf8');
-      const metadata = JSON.parse(metadataContent);
+      // Read and decrypt metadata file
+      const metadata = await this.readMetadata(metadataFilePath);
       
       // Get master key from metadata
       const masterKey = Buffer.from(metadata.masterKey, 'hex');

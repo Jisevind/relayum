@@ -39,6 +39,9 @@ services:
       - JWT_SECRET=${JWT_SECRET:-change_me_in_production_jwt_secret}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-change_me_in_production_jwt_refresh_secret}
       
+      # File Metadata Encryption
+      - METADATA_ENCRYPTION_KEY=${METADATA_ENCRYPTION_KEY:-change_me_in_production_metadata_key}
+      
       # File Storage & Limits
       - UPLOAD_PATH=${UPLOAD_PATH:-./uploads}
       - MAX_FILE_SIZE=${MAX_FILE_SIZE:-2GB}

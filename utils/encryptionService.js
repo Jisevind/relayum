@@ -193,12 +193,38 @@ class EncryptionService {
   }
 
   /**
+   * Get metadata encryption key from environment
+   * @returns {Buffer} - Metadata encryption key
+   */
+  getMetadataEncryptionKey() {
+    const keyHex = process.env.METADATA_ENCRYPTION_KEY;
+    if (!keyHex) {
+      throw new Error('METADATA_ENCRYPTION_KEY environment variable is required');
+    }
+    
+    if (keyHex.length !== 64) {
+      throw new Error('METADATA_ENCRYPTION_KEY must be 64 hex characters (32 bytes)');
+    }
+    
+    const key = Buffer.from(keyHex, 'hex');
+    if (!this.validateKey(key)) {
+      throw new Error('Invalid metadata encryption key');
+    }
+    
+    return key;
+  }
+
+  /**
    * Encrypt metadata (filename, mime type, etc.)
    * @param {Object} metadata - Metadata object
-   * @param {Buffer} key - Encryption key
+   * @param {Buffer} key - Encryption key (optional, uses env var if not provided)
    * @returns {string} - Encrypted metadata as hex string
    */
-  encryptMetadata(metadata, key) {
+  encryptMetadata(metadata, key = null) {
+    if (!key) {
+      key = this.getMetadataEncryptionKey();
+    }
+    
     const data = Buffer.from(JSON.stringify(metadata), 'utf8');
     const { encryptedData, iv, tag } = this.encryptData(key, data);
     
@@ -209,10 +235,14 @@ class EncryptionService {
   /**
    * Decrypt metadata
    * @param {string} encryptedMetadata - Encrypted metadata as hex string
-   * @param {Buffer} key - Decryption key
+   * @param {Buffer} key - Decryption key (optional, uses env var if not provided)
    * @returns {Object} - Decrypted metadata object
    */
-  decryptMetadata(encryptedMetadata, key) {
+  decryptMetadata(encryptedMetadata, key = null) {
+    if (!key) {
+      key = this.getMetadataEncryptionKey();
+    }
+    
     const data = Buffer.from(encryptedMetadata, 'hex');
     
     let offset = 0;
