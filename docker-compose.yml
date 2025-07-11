@@ -1,0 +1,220 @@
+# Relayum Docker Compose
+# Production-ready deployment with security and performance focus
+#
+# Usage:
+#   With virus scanning: docker-compose --profile clamav up -d
+#   Without scanning:    docker-compose up -d
+
+services:
+  app:
+    container_name: relayum-app
+    # image: ghcr.io/jisevind/relayum:latest
+    # Uncomment to build locally if image not available
+    image: relayum:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        - REACT_APP_API_TIMEOUT_MS=${REACT_APP_API_TIMEOUT_MS:-30000}
+        - REACT_APP_VIRUS_SCANNER_POLL_INTERVAL=${REACT_APP_VIRUS_SCANNER_POLL_INTERVAL:-120000}
+        - REACT_APP_VIRUS_SCANNER_STATS_INTERVAL=${REACT_APP_VIRUS_SCANNER_STATS_INTERVAL:-600000}
+    restart: unless-stopped
+    ports:
+      - "3020:3000"  # Backend API only
+    environment:
+      # Core Application
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-3000}
+      - TZ=${TZ:-UTC}
+      
+      # Database Configuration
+      - DB_HOST=${DB_HOST:-postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-relayum}
+      - DB_USER=${DB_USER:-relayum_user}
+      - DB_PASSWORD=${DB_PASSWORD:-change_me_in_production}
+      
+      # Security & Authentication
+      - JWT_SECRET=${JWT_SECRET:-change_me_in_production_jwt_secret}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-change_me_in_production_jwt_refresh_secret}
+      
+      # File Storage & Limits
+      - UPLOAD_PATH=${UPLOAD_PATH:-./uploads}
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-2GB}
+      - MAX_DOWNLOAD_SIZE=${MAX_DOWNLOAD_SIZE:-10GB}
+      - DEFAULT_DISK_QUOTA=${DEFAULT_DISK_QUOTA:-50GB}
+      
+      # Streaming Configuration
+      - STREAM_CHUNK_SIZE=${STREAM_CHUNK_SIZE:-65536}
+      - STREAM_BUFFER_SIZE=${STREAM_BUFFER_SIZE:-131072}
+      
+      # Admin User Configuration (REQUIRED)
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - ADMIN_OVERRIDE_ENABLED=${ADMIN_OVERRIDE_ENABLED:-true}
+      
+      # Security & Access Control
+      - ALLOW_REGISTRATION=${ALLOW_REGISTRATION:-false}
+      - LOGIN_ATTEMPT_LIMIT=${LOGIN_ATTEMPT_LIMIT:-5}
+      - LOGIN_BLOCK_DURATION=${LOGIN_BLOCK_DURATION:-900000}
+      - FILE_BLACKLIST=${FILE_BLACKLIST:-.bat,.sh,.cmd,.scr,.vbs,.jar,.com,.pif,.exe,.msi}
+      - DEFAULT_FILE_EXPIRATION_DAYS=${DEFAULT_FILE_EXPIRATION_DAYS:-90}
+      
+      # Anonymous Sharing
+      - ALLOW_ANONYMOUS_SHARING=${ALLOW_ANONYMOUS_SHARING:-false}
+      - ANONYMOUS_SHARE_EXPIRATION_DAYS=${ANONYMOUS_SHARE_EXPIRATION_DAYS:-7}
+      - ANONYMOUS_SHARE_MAX_ACCESS=${ANONYMOUS_SHARE_MAX_ACCESS:-50}
+      - ANONYMOUS_MAX_FILE_SIZE=${ANONYMOUS_MAX_FILE_SIZE:-100MB}
+      
+      # Rate Limiting
+      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-900000}
+      - AUTH_RATE_LIMIT_MAX=${AUTH_RATE_LIMIT_MAX:-5}
+      - UPLOAD_RATE_LIMIT_MAX_PROD=${UPLOAD_RATE_LIMIT_MAX_PROD:-20}
+      - UPLOAD_RATE_LIMIT_MAX_DEV=${UPLOAD_RATE_LIMIT_MAX_DEV:-20}
+      - PUBLIC_SHARE_RATE_LIMIT_MAX=${PUBLIC_SHARE_RATE_LIMIT_MAX:-50}
+      - GENERAL_RATE_LIMIT_MAX_PROD=${GENERAL_RATE_LIMIT_MAX_PROD:-500}
+      - GENERAL_RATE_LIMIT_MAX_DEV=${GENERAL_RATE_LIMIT_MAX_DEV:-500}
+      - RATE_LIMIT_RETRY_AFTER=${RATE_LIMIT_RETRY_AFTER:-900}
+      
+      # CORS & API Configuration
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-https://yourdomain.com}
+      - REACT_APP_API_TIMEOUT_MS=${REACT_APP_API_TIMEOUT_MS:-30000}
+      - REACT_APP_VIRUS_SCANNER_POLL_INTERVAL=${REACT_APP_VIRUS_SCANNER_POLL_INTERVAL:-120000}
+      - REACT_APP_VIRUS_SCANNER_STATS_INTERVAL=${REACT_APP_VIRUS_SCANNER_STATS_INTERVAL:-600000}
+      
+      # UI Settings
+      - ENABLE_LANDING_PAGE=${ENABLE_LANDING_PAGE:-false}
+      - HTTPS=${HTTPS:-true}
+      
+      # Logging
+      - LOG_DIRECTORY=${LOG_DIRECTORY:-logs}
+      
+      # Security Headers Configuration
+      - DISABLE_SECURITY_HEADERS=${DISABLE_SECURITY_HEADERS:-false}
+      
+      # Virus Scanning Configuration
+      - ENABLE_VIRUS_SCANNING=${ENABLE_VIRUS_SCANNING:-true}
+      - CLAMAV_HOST=${CLAMAV_HOST:-clamav}
+      - CLAMAV_PORT=${CLAMAV_PORT:-3310}
+      - CLAMAV_TIMEOUT=${CLAMAV_TIMEOUT:-60000}
+      - CLAMAV_REQUIRED=${CLAMAV_REQUIRED:-true}
+      - VIRUS_SCAN_MODE=${VIRUS_SCAN_MODE:-async}
+      - VIRUS_SCAN_MAX_FILE_SIZE=${VIRUS_SCAN_MAX_FILE_SIZE:-1GB}
+    volumes:
+      - relayum_uploads:/app/uploads
+      - relayum_logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/auth/me"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/tmp
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: relayum-postgres
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-UTC}
+      - POSTGRES_DB=${DB_NAME:-relayum}
+      - POSTGRES_USER=${DB_USER:-relayum_user}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-change_me_in_production}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - relayum_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:${DB_PORT:-5432}:5432"  # Bind to localhost only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-relayum_user} -d ${DB_NAME:-relayum}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  clamav:
+    profiles: ["clamav"]
+    image: clamav/clamav:stable
+    container_name: relayum-clamav
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-UTC}
+      # ClamAV Configuration
+      - CLAMAV_NO_FRESHCLAMD=false
+      - CLAMAV_NO_CLAMD=false
+      - CLAMAV_NO_MILTERD=true
+      - CLAMD_STARTUP_TIMEOUT=${CLAMAV_STARTUP_TIMEOUT:-90}
+      # File scanning limits
+      - CLAMD_CONF_StreamMaxLength=${CLAMD_CONF_StreamMaxLength:-1G}
+      - CLAMD_CONF_MaxFileSize=${CLAMD_CONF_MaxFileSize:-1G}
+      - CLAMD_CONF_MaxScanSize=${CLAMD_CONF_MaxScanSize:-1G}
+      - CLAMD_CONF_MaxFiles=${CLAMD_CONF_MaxFiles:-10000}
+      - CLAMD_CONF_MaxRecursion=${CLAMD_CONF_MaxRecursion:-10}
+      - CLAMD_CONF_MaxDirectoryRecursion=${CLAMD_CONF_MaxDirectoryRecursion:-15}
+      # Security settings
+      - CLAMD_CONF_FollowDirectorySymlinks=${CLAMD_CONF_FollowDirectorySymlinks:-false}
+      - CLAMD_CONF_FollowFileSymlinks=${CLAMD_CONF_FollowFileSymlinks:-false}
+      # Performance tuning
+      - CLAMD_CONF_ReadTimeout=${CLAMD_CONF_ReadTimeout:-180}
+      - CLAMD_CONF_CommandReadTimeout=${CLAMD_CONF_CommandReadTimeout:-30}
+      - CLAMD_CONF_SendBufTimeout=${CLAMD_CONF_SendBufTimeout:-200}
+      - CLAMD_CONF_MaxQueue=${CLAMD_CONF_MaxQueue:-100}
+      - CLAMD_CONF_ExtendedDetectionInfo=${CLAMD_CONF_ExtendedDetectionInfo:-true}
+      # Timeout settings to prevent long scans
+      - CLAMD_CONF_BytecodeTimeout=${CLAMD_CONF_BytecodeTimeout:-30000}
+      - CLAMD_CONF_MaxScanTime=${CLAMD_CONF_MaxScanTime:-60000}
+    volumes:
+      - relayum_clamav_data:/var/lib/clamav
+      - relayum_clamav_logs:/var/log/clamav
+    ports:
+      - "127.0.0.1:${CLAMAV_PORT:-3310}:3310"  # Bind to localhost only
+    healthcheck:
+      test: ["CMD", "clamdcheck"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 5m
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  relayum_postgres_data:
+    driver: local
+  relayum_clamav_data:
+    driver: local
+  relayum_clamav_logs:
+    driver: local
+  relayum_uploads:
+    driver: local
+  relayum_logs:
+    driver: local
+
+networks:
+  default:
+    name: relayum_network
