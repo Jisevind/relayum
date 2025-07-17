@@ -1,19 +1,29 @@
 # Relayum
 
+[![Docker Image](https://img.shields.io/badge/Docker-Available-blue?logo=docker)](https://github.com/jisevind/relayum)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/Version-1.0.0-orange.svg)](https://github.com/jisevind/relayum/releases)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-brightgreen?logo=node.js)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-18+-blue?logo=react)](https://reactjs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-blue?logo=postgresql)](https://www.postgresql.org/)
+
 A secure, self-hosted file sharing platform built with Docker. Upload, organize, and share files with encrypted storage and virus scanning capabilities.
 
 ## Overview
 
-Relayum is a modern file sharing application designed for individuals and teams who need secure file management and sharing. Built with React and Node.js, it provides a clean web interface for file operations with enterprise-grade security features.
+Relayum is a file sharing application designed for individuals and teams who need secure file management and sharing. Built with React and Node.js, it provides a clean web interface for file operations with enterprise-grade security features.
 
 **Key Features:**
-- Secure file upload and storage with AES-256 encryption
-- Public and private file sharing with expiration dates
-- Folder organization with drag-and-drop interface
-- Integrated virus scanning (ClamAV)
-- User authentication and admin management
-- Storage quotas and usage tracking
-- Dark/light theme support
+- 🔒 **Secure Storage**: AES-256 encryption for file metadata and content
+- 🔗 **Flexible Sharing**: Public and private file sharing with expiration dates
+- 📁 **Folder Management**: Hierarchical organization with drag-and-drop interface
+- 🛡️ **Virus Scanning**: Integrated ClamAV for malware detection
+- 👥 **User Management**: Role-based authentication and admin controls
+- 💾 **Storage Quotas**: Per-user disk quotas and usage tracking
+- 🌓 **Modern UI**: Dark/light theme support with Material-UI
+- 📊 **Admin Dashboard**: Comprehensive management tools and analytics
+- 🔐 **Security Features**: Rate limiting, CORS, security headers, and more
+- 🚀 **Docker Ready**: Production-ready containerized deployment
 
 ## Quick Start
 
@@ -30,9 +40,18 @@ Relayum is a modern file sharing application designed for individuals and teams 
    ```
 
 3. **Deploy:**
+   
+   **With virus scanning (recommended):**
+   ```bash
+   docker-compose --profile clamav up -d
+   ```
+   
+   **Without virus scanning:**
    ```bash
    docker-compose up -d
    ```
+   
+   > **Note:** ClamAV initialization can take 5-10 minutes for virus definition downloads. The app will start before ClamAV is ready.
 
 4. **Access:** Open `http://localhost:3020`
 
@@ -62,38 +81,48 @@ CORS_ALLOWED_ORIGINS=https://yourdomain.com
 
 ## Requirements
 
-- Docker 20.10+
-- Docker Compose 2.0+
-- 2GB RAM (4GB recommended with virus scanning)
-- 10GB+ disk space
+- **Docker**: 20.10+ with Docker Compose 2.0+
+- **Memory**: 2GB RAM (4GB recommended with virus scanning)
+- **Storage**: 10GB+ disk space
+- **Network**: Internet access for initial setup and virus definition updates
 
 ## Architecture
 
-- **Frontend:** React 18 with Material-UI
-- **Backend:** Node.js with Express
-- **Database:** PostgreSQL 15
-- **Security:** AES-256 encryption, JWT authentication, rate limiting
-- **Virus Scanner:** ClamAV (optional)
+### Technology Stack
+- **Frontend:** React 18 with Material-UI v6, React Router v6, TanStack Query
+- **Backend:** Node.js with Express, JWT authentication, Helmet security
+- **Database:** PostgreSQL 15 with connection pooling
+- **Security:** AES-256 encryption, bcrypt hashing, rate limiting, CORS
+- **Virus Scanner:** ClamAV with configurable scanning modes
+- **Containerization:** Multi-stage Docker builds with security hardening
 
-## Beta Software Notice
+### Key Components
+- **File Management**: Secure upload, encryption, and storage
+- **Sharing System**: Public/private links with expiration and access controls
+- **Admin Panel**: User management, system monitoring, and configuration
+- **Virus Scanning**: Real-time malware detection with quarantine
+- **Anonymous Sharing**: Optional anonymous file upload functionality
 
-**WARNING: This software is in beta and under active development.**
+## Production Readiness
 
-- Not recommended for production use without thorough testing
-- Database schema and API may change between versions
-- Security features are implemented but not independently audited
-- Use at your own risk and always maintain backups
+**This software is actively developed and includes production-ready features:**
 
-**For production deployments:**
-- Test thoroughly in a staging environment
-- Implement proper backup strategies
-- Monitor security advisories
-- Consider professional security audit
+✅ **Security Hardened**: Multiple layers of security controls
+✅ **Docker Optimized**: Multi-stage builds with security best practices
+✅ **Health Checks**: Built-in monitoring and health endpoints
+✅ **Logging**: Structured logging with rotation
+✅ **Performance**: Optimized database queries and caching
+
+**Production Checklist:**
+- [ ] Test thoroughly in staging environment
+- [ ] Configure proper backup strategies
+- [ ] Set up monitoring and alerting
+- [ ] Review and update security configurations
+- [ ] Consider professional security audit for sensitive deployments
 
 ## Documentation
 
 - **Environment Variables:** [docs/ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md)
-- **Deployment Guide:** [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
 ## Contributing
 
