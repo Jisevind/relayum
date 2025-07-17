@@ -8,17 +8,17 @@
 services:
   app:
     container_name: relayum-app
-    # image: ghcr.io/jisevind/relayum:latest
+    image: ghcr.io/jisevind/relayum:latest
     # Uncomment to build locally if image not available
-    image: relayum:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: production
-      args:
-        - REACT_APP_API_TIMEOUT_MS=${REACT_APP_API_TIMEOUT_MS:-30000}
-        - REACT_APP_VIRUS_SCANNER_POLL_INTERVAL=${REACT_APP_VIRUS_SCANNER_POLL_INTERVAL:-120000}
-        - REACT_APP_VIRUS_SCANNER_STATS_INTERVAL=${REACT_APP_VIRUS_SCANNER_STATS_INTERVAL:-600000}
+    #image: relayum:latest
+    #build:
+    #  context: .
+    #  dockerfile: Dockerfile
+    #  target: production
+    #  args:
+    #    - REACT_APP_API_TIMEOUT_MS=${REACT_APP_API_TIMEOUT_MS:-30000}
+    #    - REACT_APP_VIRUS_SCANNER_POLL_INTERVAL=${REACT_APP_VIRUS_SCANNER_POLL_INTERVAL:-120000}
+    #    - REACT_APP_VIRUS_SCANNER_STATS_INTERVAL=${REACT_APP_VIRUS_SCANNER_STATS_INTERVAL:-600000}
     restart: unless-stopped
     ports:
       - "3020:3000"  # Backend API only
