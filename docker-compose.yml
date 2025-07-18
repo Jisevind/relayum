@@ -5,6 +5,8 @@
 #   With virus scanning: docker-compose --profile clamav up -d
 #   Without scanning:    docker-compose up -d
 
+name: relayum
+
 services:
   app:
     container_name: relayum-app
@@ -107,9 +109,9 @@ services:
       - VIRUS_SCAN_MODE=${VIRUS_SCAN_MODE:-async}
       - VIRUS_SCAN_MAX_FILE_SIZE=${VIRUS_SCAN_MAX_FILE_SIZE:-1GB}
     volumes:
-      - relayum_uploads:/app/uploads
-      - relayum_quarantine:/app/quarantine
-      - relayum_logs:/app/logs
+      - uploads:/app/uploads
+      - quarantine:/app/quarantine
+      - logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
@@ -142,7 +144,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD:-change_me_in_production}
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
     volumes:
-      - relayum_postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     ports:
       - "127.0.0.1:${DB_PORT:-5432}:5432"  # Bind to localhost only
     healthcheck:
@@ -190,8 +192,8 @@ services:
       - CLAMD_CONF_BytecodeTimeout=${CLAMD_CONF_BytecodeTimeout:-30000}
       - CLAMD_CONF_MaxScanTime=${CLAMD_CONF_MaxScanTime:-60000}
     volumes:
-      - relayum_clamav_data:/var/lib/clamav
-      - relayum_clamav_logs:/var/log/clamav
+      - clamav_data:/var/lib/clamav
+      - clamav_logs:/var/log/clamav
     ports:
       - "127.0.0.1:${CLAMAV_PORT:-3310}:3310"  # Bind to localhost only
     healthcheck:
@@ -209,17 +211,17 @@ services:
         max-file: "3"
 
 volumes:
-  relayum_postgres_data:
+  postgres_data:
     driver: local
-  relayum_clamav_data:
+  uploads:
     driver: local
-  relayum_clamav_logs:
+  quarantine:
     driver: local
-  relayum_uploads:
+  logs:
     driver: local
-  relayum_quarantine:
+  clamav_data:
     driver: local
-  relayum_logs:
+  clamav_logs:
     driver: local
 
 networks:

@@ -65,7 +65,7 @@ const PublicShare = () => {
 
   const checkShareInfo = async () => {
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL;
+      const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
       const response = await fetch(`${API_BASE_URL}/download/public/${token}/check`);
       if (!response.ok) {
         throw new Error('Share not found or expired');
@@ -96,7 +96,7 @@ const PublicShare = () => {
     setError('');
 
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL;
+      const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
       const response = await fetch(`${API_BASE_URL}/download/public/${token}/verify`, {
         method: 'POST',
         headers: {
@@ -152,7 +152,7 @@ const PublicShare = () => {
   }, [token, passwordVerified, shareInfo, password]);
 
   const handleDownload = () => {
-    const API_BASE_URL = process.env.REACT_APP_API_URL;
+    const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
     const link = document.createElement('a');
     const downloadUrl = shareInfo?.requires_password 
       ? `${API_BASE_URL}/download/public/${token}?password=${encodeURIComponent(password)}`
@@ -173,7 +173,7 @@ const PublicShare = () => {
   };
 
   const handleFileDownload = (fileId, filename) => {
-    const API_BASE_URL = process.env.REACT_APP_API_URL;
+    const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
     const link = document.createElement('a');
     const downloadUrl = shareInfo?.requires_password 
       ? `${API_BASE_URL}/download/public/${token}/file/${fileId}?password=${encodeURIComponent(password)}`
