@@ -31,6 +31,7 @@ import {
   Refresh,
 } from '@mui/icons-material';
 import ScannerDashboard from './ScannerDashboard';
+import ThreatsQuarantineTab from './ThreatsQuarantineTab';
 import { useVirusScannerStatus } from '../hooks/useVirusScannerStatus';
 import { formatDateTime } from '../utils/dateUtils';
 
@@ -190,17 +191,7 @@ const VirusScanningAdminTab = () => {
         );
 
       case 1: // Threats & Quarantine
-        return (
-          <Box sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Threats & Quarantine Management
-            </Typography>
-            <Alert severity="info">
-              Threat management interface coming soon. This will include quarantine file management, 
-              threat analysis, and false positive handling.
-            </Alert>
-          </Box>
-        );
+        return <ThreatsQuarantineTab />;
 
       case 2: // Configuration
         return (

@@ -9,6 +9,7 @@ const DatabaseUtils = require('../utils/dbUtils');
 const StorageService = require('../utils/storageService');
 const FileValidationService = require('../middleware/fileValidation');
 const { getVirusScanner } = require('../services/virusScanner');
+const { getQuarantineService } = require('../services/quarantineService');
 const { parseFileSize } = require('../utils/fileSizeUtils');
 const router = express.Router();
 const storageService = new StorageService();
@@ -177,22 +178,103 @@ router.post('/upload', authenticateToken, upload.array('files'), async (req, res
               scanTime: scanResult.scanTime
             });
             
-            // Block upload if virus detected
+            // Handle virus detection - quarantine instead of blocking
             if (!scanResult.clean && scanResult.threat) {
               console.log(`❌ VIRUS DETECTED in ${file.originalname}: ${scanResult.threat}`);
-              rejectedFiles.push({
-                filename: file.originalname,
-                reason: 'virus_detected',
-                threat: scanResult.threat,
-                message: `Virus detected: ${scanResult.threat}`
-              });
               
-              // Clean up temp file
               try {
-                await fs.unlink(file.path);
-              } catch (unlinkError) {
-                console.error('Error cleaning up infected file:', unlinkError);
+                // Quarantine the infected file
+                const quarantineService = getQuarantineService();
+                const quarantineResult = await quarantineService.quarantineFile(file.path, {
+                  originalFilename: file.originalname,
+                  fileSize: file.size,
+                  mimeType: file.mimetype,
+                  threat: scanResult.threat,
+                  uploaderId: req.user.id,
+                  scanResult: scanResult
+                });
+
+                // Record scan history for quarantined file
+                await db.query(`
+                  INSERT INTO scan_history (
+                    file_id, file_name, file_size, mime_type, uploader_id,
+                    scan_status, threat_name, scan_duration_ms, scanned_at, details
+                  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9)
+                `, [
+                  null, // file_id is null since file was quarantined not stored normally
+                  file.originalname,
+                  file.size,
+                  file.mimetype,
+                  req.user.id,
+                  scanResult.status,
+                  scanResult.threat,
+                  scanResult.scanTime || 0,
+                  JSON.stringify({
+                    clean: scanResult.clean,
+                    engine: scanResult.engine,
+                    message: scanResult.message,
+                    quarantined: true,
+                    quarantine_id: quarantineResult.quarantineId,
+                    file_hash: quarantineResult.fileHash
+                  })
+                ]);
+
+                console.log(`🔒 File quarantined successfully: ${file.originalname} (ID: ${quarantineResult.quarantineId})`);
+
+                rejectedFiles.push({
+                  filename: file.originalname,
+                  reason: 'virus_detected',
+                  threat: scanResult.threat,
+                  message: `Virus detected and quarantined: ${scanResult.threat}`,
+                  quarantine_id: quarantineResult.quarantineId
+                });
+
+              } catch (quarantineError) {
+                console.error('Failed to quarantine infected file:', quarantineError);
+                
+                // Fallback: record scan history and clean up file
+                try {
+                  await db.query(`
+                    INSERT INTO scan_history (
+                      file_id, file_name, file_size, mime_type, uploader_id,
+                      scan_status, threat_name, scan_duration_ms, scanned_at, details
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9)
+                  `, [
+                    null,
+                    file.originalname,
+                    file.size,
+                    file.mimetype,
+                    req.user.id,
+                    scanResult.status,
+                    scanResult.threat,
+                    scanResult.scanTime || 0,
+                    JSON.stringify({
+                      clean: scanResult.clean,
+                      engine: scanResult.engine,
+                      message: scanResult.message,
+                      quarantine_failed: true,
+                      quarantine_error: quarantineError.message
+                    })
+                  ]);
+                } catch (historyError) {
+                  console.error('Failed to record threat scan history:', historyError);
+                }
+
+                // Clean up temp file
+                try {
+                  await fs.unlink(file.path);
+                } catch (unlinkError) {
+                  console.error('Error cleaning up infected file:', unlinkError);
+                }
+
+                rejectedFiles.push({
+                  filename: file.originalname,
+                  reason: 'virus_detected',
+                  threat: scanResult.threat,
+                  message: `Virus detected but quarantine failed: ${scanResult.threat}`
+                });
               }
+              
               // Skip this file and continue with others
               continue;
             }

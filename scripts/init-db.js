@@ -160,8 +160,7 @@ async function initDatabase() {
         ('required', $2, 'boolean', 'Require virus scanning (block uploads if scanner unavailable)'),
         ('mode', $3, 'string', 'Scan mode: sync, async, or disabled'),
         ('timeout', $4, 'integer', 'Scanner timeout in milliseconds'),
-        ('quarantine_retention_days', '30', 'integer', 'Days to retain quarantined files'),
-        ('auto_delete_threats', 'false', 'boolean', 'Automatically delete confirmed threats')
+        ('quarantine_retention_days', '30', 'integer', 'Days to retain quarantined files')
       ON CONFLICT (config_key) DO NOTHING
     `, [virusScanningEnabled, virusScanningRequired, virusScanMode, virusScanTimeout]);
 

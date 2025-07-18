@@ -35,6 +35,7 @@ RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nodejs -u 1001
 
 RUN mkdir -p uploads && chown -R nodejs:nodejs uploads
+RUN mkdir -p quarantine && chown -R nodejs:nodejs quarantine
 RUN chown -R nodejs:nodejs /app
 
 USER nodejs

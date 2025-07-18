@@ -44,6 +44,7 @@ services:
       
       # File Storage & Limits
       - UPLOAD_PATH=${UPLOAD_PATH:-./uploads}
+      - QUARANTINE_PATH=${QUARANTINE_PATH:-./quarantine}
       - MAX_FILE_SIZE=${MAX_FILE_SIZE:-2GB}
       - MAX_DOWNLOAD_SIZE=${MAX_DOWNLOAD_SIZE:-10GB}
       - DEFAULT_DISK_QUOTA=${DEFAULT_DISK_QUOTA:-50GB}
@@ -107,6 +108,7 @@ services:
       - VIRUS_SCAN_MAX_FILE_SIZE=${VIRUS_SCAN_MAX_FILE_SIZE:-1GB}
     volumes:
       - relayum_uploads:/app/uploads
+      - relayum_quarantine:/app/quarantine
       - relayum_logs:/app/logs
     depends_on:
       postgres:
@@ -214,6 +216,8 @@ volumes:
   relayum_clamav_logs:
     driver: local
   relayum_uploads:
+    driver: local
+  relayum_quarantine:
     driver: local
   relayum_logs:
     driver: local

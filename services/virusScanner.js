@@ -677,31 +677,59 @@ class OptionalVirusScanner {
         });
       }
 
-      // Log to scan_history table
-      try {
-        const db = require('../models/database');
-        
-        await db.query(`
-          INSERT INTO scan_history (file_id, file_name, file_size, mime_type, uploader_id, scan_status, threat_name, scan_duration_ms, details)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        `, [
-          options.fileId || null,
-          options.fileName || filePath,
-          options.fileSize || null,
-          options.fileMime || null,
-          options.uploaderId || null,
-          scanResult.status,
-          scanResult.threat,
-          scanResult.scanTime,
-          { 
-            engine: scanResult.engine ? scanResult.engine.replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim() : null,
-            message: scanResult.message
+      // Note: Scan history logging is handled by the calling code (file upload routes)
+      // to avoid duplicate entries and ensure proper context (file_id, uploader_id, etc.)
+
+      // Handle infected files for automated flagging (only if file_id is provided)
+      if (isInfected && options.fileId) {
+        try {
+          const db = require('../models/database');
+          
+          // Check if file has any active shares
+          const shares = await db.query(`
+            SELECT id, shared_by FROM shares 
+            WHERE file_id = $1 AND suspended = FALSE
+          `, [options.fileId]);
+
+          if (shares.rows.length > 0) {
+            // Auto-suspend all shares of infected file
+            await db.query(`
+              UPDATE shares 
+              SET suspended = TRUE, 
+                  suspended_at = CURRENT_TIMESTAMP,
+                  suspended_by = NULL,
+                  suspension_reason = 'Automatically suspended due to virus detection'
+              WHERE file_id = $1 AND suspended = FALSE
+            `, [options.fileId]);
+
+            // Create automated report for each share
+            for (const share of shares.rows) {
+              await db.query(`
+                INSERT INTO share_reports (share_id, reporter_id, reporter_ip, report_type, description, status, priority)
+                VALUES ($1, NULL, '127.0.0.1', 'malware', $2, 'resolved', 'high')
+              `, [share.id, `Virus detected: ${scanResult.threat}. File automatically suspended.`]);
+            }
+
+            // Log automated action
+            await db.query(`
+              INSERT INTO admin_actions (admin_id, action_type, target_user_id, action_details, timestamp)
+              VALUES (NULL, 'automated_virus_suspend', $1, $2, CURRENT_TIMESTAMP)
+            `, [shares.rows[0].shared_by, JSON.stringify({
+              file_id: options.fileId,
+              threat: scanResult.threat,
+              shares_suspended: shares.rows.length,
+              reason: 'virus_detection'
+            })]);
+
+            logger.warn('Infected file shares automatically suspended', {
+              fileId: options.fileId,
+              threat: scanResult.threat,
+              sharesSuspended: shares.rows.length
+            });
           }
-        ]);
-      } catch (dbError) {
-        logger.error('Failed to log scan to history', { 
-          error: dbError.message
-        });
+        } catch (flaggingError) {
+          logger.error('Error integrating with automated flagging:', flaggingError);
+        }
       }
 
       return scanResult;

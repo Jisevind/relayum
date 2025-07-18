@@ -330,4 +330,157 @@ router.post('/cleanup', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
+/**
+ * Get scan history with threats
+ */
+router.get('/scan-history', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = (page - 1) * limit;
+    const status = req.query.status;
+    const days = parseInt(req.query.days) || 30;
+    
+    let whereClause = 'WHERE scanned_at > NOW() - INTERVAL \'1 day\' * $3';
+    let params = [limit, offset, days];
+    
+    if (status) {
+      whereClause += ' AND scan_status = $4';
+      params.push(status);
+    }
+    
+    const result = await db.query(`
+      SELECT 
+        sh.*,
+        u.username as uploader_username,
+        f.filename as original_filename
+      FROM scan_history sh
+      LEFT JOIN users u ON sh.uploader_id = u.id
+      LEFT JOIN files f ON sh.file_id = f.id
+      ${whereClause}
+      ORDER BY sh.scanned_at DESC
+      LIMIT $1 OFFSET $2
+    `, params);
+    
+    // Get total count
+    const countParams = [days];
+    let countWhere = 'WHERE scanned_at > NOW() - INTERVAL \'1 day\' * $1';
+    if (status) {
+      countWhere += ' AND scan_status = $2';
+      countParams.push(status);
+    }
+    
+    const countResult = await db.query(`
+      SELECT COUNT(*) as total
+      FROM scan_history
+      ${countWhere}
+    `, countParams);
+    
+    res.json({
+      scans: result.rows,
+      pagination: {
+        page,
+        limit,
+        total: parseInt(countResult.rows[0].total),
+        pages: Math.ceil(countResult.rows[0].total / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error getting scan history:', error);
+    res.status(500).json({ error: 'Failed to get scan history' });
+  }
+});
+
+/**
+ * Get threat analysis
+ */
+router.get('/threats', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 30;
+    
+    // Get threat statistics
+    const threatStatsResult = await db.query(`
+      SELECT 
+        threat_name,
+        COUNT(*) as count,
+        MAX(scanned_at) as last_detected,
+        ARRAY_AGG(DISTINCT file_name) as affected_files
+      FROM scan_history
+      WHERE scan_status = 'infected' 
+      AND scanned_at > NOW() - INTERVAL '1 day' * $1
+      AND threat_name IS NOT NULL
+      GROUP BY threat_name
+      ORDER BY count DESC
+    `, [days]);
+    
+    // Get recent threats
+    const recentThreatsResult = await db.query(`
+      SELECT 
+        sh.*,
+        u.username as uploader_username,
+        f.filename as original_filename
+      FROM scan_history sh
+      LEFT JOIN users u ON sh.uploader_id = u.id
+      LEFT JOIN files f ON sh.file_id = f.id
+      WHERE sh.scan_status = 'infected' 
+      AND sh.scanned_at > NOW() - INTERVAL '1 day' * $1
+      ORDER BY sh.scanned_at DESC
+      LIMIT 20
+    `, [days]);
+    
+    // Get threat trends
+    const trendResult = await db.query(`
+      SELECT 
+        DATE_TRUNC('day', scanned_at) as date,
+        COUNT(*) as threat_count,
+        COUNT(DISTINCT threat_name) as unique_threats
+      FROM scan_history
+      WHERE scan_status = 'infected' 
+      AND scanned_at > NOW() - INTERVAL '1 day' * $1
+      GROUP BY DATE_TRUNC('day', scanned_at)
+      ORDER BY date DESC
+    `, [days]);
+    
+    res.json({
+      threatStats: threatStatsResult.rows,
+      recentThreats: recentThreatsResult.rows,
+      threatTrends: trendResult.rows,
+      period_days: days
+    });
+  } catch (error) {
+    console.error('Error getting threat analysis:', error);
+    res.status(500).json({ error: 'Failed to get threat analysis' });
+  }
+});
+
+/**
+ * Bulk update quarantine files
+ */
+router.post('/quarantine/bulk-update', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { ids, status, notes } = req.body;
+    
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'Array of IDs required' });
+    }
+    
+    if (!['confirmed_threat', 'false_positive', 'deleted'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+    
+    const result = await db.query(
+      'UPDATE quarantine_files SET status = $1, reviewed_by = $2, reviewed_at = CURRENT_TIMESTAMP WHERE id = ANY($3::int[]) RETURNING *',
+      [status, req.user.id, ids]
+    );
+    
+    res.json({
+      message: `Updated ${result.rows.length} quarantine files`,
+      files: result.rows
+    });
+  } catch (error) {
+    console.error('Error bulk updating quarantine files:', error);
+    res.status(500).json({ error: 'Failed to bulk update quarantine files' });
+  }
+});
+
 module.exports = router;
