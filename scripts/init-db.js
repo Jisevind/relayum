@@ -203,13 +203,13 @@ async function initDatabase() {
         RETURN QUERY
         SELECT 
           COUNT(*) as total_scans,
-          COUNT(*) FILTER (WHERE scan_result = 'clean') as clean_files,
-          COUNT(*) FILTER (WHERE scan_result = 'infected') as infected_files,
-          COUNT(*) FILTER (WHERE scan_result = 'error') as scan_errors,
+          COUNT(*) FILTER (WHERE scan_status = 'clean') as clean_files,
+          COUNT(*) FILTER (WHERE scan_status = 'infected') as infected_files,
+          COUNT(*) FILTER (WHERE scan_status = 'error') as scan_errors,
           AVG(scan_duration_ms) as avg_scan_time,
           (SELECT COUNT(*) FROM quarantine_files WHERE quarantined_at > NOW() - INTERVAL '1 day' * days_back) as quarantined_files
-        FROM scan_results 
-        WHERE scan_date > NOW() - INTERVAL '1 day' * days_back;
+        FROM scan_history 
+        WHERE scanned_at > NOW() - INTERVAL '1 day' * days_back;
       END;
       $$ LANGUAGE plpgsql;
     `);
