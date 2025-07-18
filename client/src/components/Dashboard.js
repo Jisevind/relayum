@@ -131,7 +131,6 @@ const Dashboard = () => {
       id: 'received' 
     },
     ...(isAdmin ? [
-      { label: 'All Shares', icon: <People />, id: 'all' },
       { label: 'Admin Panel', icon: <AdminPanelSettings />, id: 'admin' }
     ] : [])
   ];
@@ -294,11 +293,6 @@ const Dashboard = () => {
             </ErrorBoundary>
           )}
           {activeTab === 3 && isAdmin && (
-            <ErrorBoundary title="All Shares Error" showHomeButton={false}>
-              <SharesList type="all" />
-            </ErrorBoundary>
-          )}
-          {activeTab === 4 && isAdmin && (
             <ErrorBoundary title="Admin Panel Error" showHomeButton={false}>
               <AdminPanel />
             </ErrorBoundary>

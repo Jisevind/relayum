@@ -46,9 +46,11 @@ import {
   SupervisorAccount,
   PersonOff,
   Security,
+  People,
 } from '@mui/icons-material';
 import VirusScanningAdminTab from './VirusScanningAdminTab';
 import LoginLogsAdminTab from './LoginLogsAdminTab';
+import AdminSharesList from './AdminSharesList';
 
 const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -259,6 +261,7 @@ const AdminPanel = () => {
 
   const tabs = [
     { label: 'User Management', icon: <Person />, id: 'users' },
+    { label: 'All Shares', icon: <People />, id: 'all-shares' },
     { label: 'Virus Scanning', icon: <Security />, id: 'virus-scanning' },
     { label: 'Login Logs', icon: <History />, id: 'login-logs' },
   ];
@@ -519,10 +522,14 @@ const AdminPanel = () => {
       )}
 
       {activeTab === 1 && (
-        <VirusScanningAdminTab />
+        <AdminSharesList />
       )}
 
       {activeTab === 2 && (
+        <VirusScanningAdminTab />
+      )}
+
+      {activeTab === 3 && (
         <LoginLogsAdminTab />
       )}
 
