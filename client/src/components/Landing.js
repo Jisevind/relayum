@@ -26,6 +26,7 @@ import {
 import AnonymousUpload from './AnonymousUpload';
 import Login from './Login';
 import Register from './Register';
+import Footer from './Footer';
 import { authAPI } from '../services/api';
 
 const Landing = () => {
@@ -304,6 +305,7 @@ const Landing = () => {
           </Box>
         )}
       </Container>
+      <Footer />
     </Box>
   );
 };

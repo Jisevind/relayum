@@ -12,6 +12,7 @@ import FilesTabContent from './FilesTabContent';
 import ErrorBoundary from './ErrorBoundary';
 import ThemeToggle from './ThemeToggle';
 import VirusScannerStatusChip from './VirusScannerStatusChip';
+import Footer from './Footer';
 import {
   Box,
   Container,
@@ -323,6 +324,9 @@ const Dashboard = () => {
         currentFolderId={currentFolderId}
       />
       </Box>
+      
+      {/* Footer - Outside the main Box so it's always visible */}
+      <Footer />
     </DragProvider>
   );
 };

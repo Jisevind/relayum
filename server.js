@@ -148,6 +148,19 @@ app.use(generalLimiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 
+// Version endpoint
+app.get('/api/version', (req, res) => {
+  const packageJson = require('./package.json');
+  res.json({
+    version: packageJson.version,
+    name: packageJson.name,
+    buildDate: process.env.BUILD_DATE || 'Unknown',
+    nodeVersion: process.version,
+    platform: process.platform,
+    arch: process.arch
+  });
+});
+
 // Route configuration with appropriate rate limiting
 app.use('/api/auth', authRoutes);
 app.use('/api/files', uploadLimiter, fileRoutes);

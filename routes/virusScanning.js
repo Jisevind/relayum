@@ -155,12 +155,22 @@ router.get('/statistics', authenticateToken, requireAdmin, async (req, res) => {
         COUNT(*) FILTER (WHERE scan_status = 'clean') as clean_files,
         COUNT(*) FILTER (WHERE scan_status = 'infected') as infected_files,
         COUNT(*) FILTER (WHERE scan_status = 'error') as scan_errors,
-        ROUND(AVG(scan_duration_ms)::numeric, 2) as avg_scan_time
+        ROUND(AVG(scan_duration_ms)::numeric, 2) as avg_scan_time,
+        (SELECT COUNT(*) FROM quarantine_files WHERE quarantined_at > NOW() - INTERVAL '1 day' * $1) as quarantined_files
       FROM scan_history
       WHERE scanned_at > NOW() - INTERVAL '1 day' * $1
     `, [days]);
     
     const dbStats = historyStatsResult.rows[0] || {};
+    
+    // Ensure proper number conversion from PostgreSQL
+    if (dbStats.total_scans) {
+      dbStats.total_scans = parseInt(dbStats.total_scans);
+      dbStats.clean_files = parseInt(dbStats.clean_files) || 0;
+      dbStats.infected_files = parseInt(dbStats.infected_files) || 0;
+      dbStats.scan_errors = parseInt(dbStats.scan_errors) || 0;
+      dbStats.quarantined_files = parseInt(dbStats.quarantined_files) || 0;
+    }
     
     // Get real-time scanner statistics
     const scanner = getVirusScanner();

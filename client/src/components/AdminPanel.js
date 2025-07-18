@@ -47,10 +47,167 @@ import {
   PersonOff,
   Security,
   People,
+  Info,
 } from '@mui/icons-material';
 import VirusScanningAdminTab from './VirusScanningAdminTab';
 import LoginLogsAdminTab from './LoginLogsAdminTab';
 import AdminSharesList from './AdminSharesList';
+import api from '../services/api';
+
+// System Information Tab Component
+const SystemInformationTab = () => {
+  const [systemInfo, setSystemInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchSystemInfo = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/version');
+        setSystemInfo(response.data);
+      } catch (err) {
+        setError('Failed to fetch system information');
+        console.error('Error fetching system info:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSystemInfo();
+  }, []);
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          System Information
+        </Typography>
+        <LinearProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          System Information
+        </Typography>
+        <Alert severity="error">
+          {error}
+        </Alert>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h6" gutterBottom>
+        System Information
+      </Typography>
+      
+      <Grid container spacing={3}>
+        {/* Application Information */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="subtitle1" gutterBottom color="primary">
+              Application
+            </Typography>
+            <Stack spacing={2}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Name:
+                </Typography>
+                <Typography variant="body2" fontWeight="bold">
+                  {systemInfo?.name || 'Relayum'}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Version:
+                </Typography>
+                <Typography variant="body2" fontWeight="bold">
+                  {systemInfo?.version || 'Unknown'}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Build Date:
+                </Typography>
+                <Typography variant="body2" fontWeight="bold">
+                  {systemInfo?.buildDate || 'Unknown'}
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+        </Grid>
+
+        {/* Runtime Information */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="subtitle1" gutterBottom color="primary">
+              Runtime Environment
+            </Typography>
+            <Stack spacing={2}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Node.js Version:
+                </Typography>
+                <Typography variant="body2" fontWeight="bold">
+                  {systemInfo?.nodeVersion || 'Unknown'}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Platform:
+                </Typography>
+                <Typography variant="body2" fontWeight="bold">
+                  {systemInfo?.platform || 'Unknown'}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Architecture:
+                </Typography>
+                <Typography variant="body2" fontWeight="bold">
+                  {systemInfo?.arch || 'Unknown'}
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+        </Grid>
+
+        {/* Additional Information */}
+        <Grid item xs={12}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="subtitle1" gutterBottom color="primary">
+              Additional Information
+            </Typography>
+            <Stack spacing={2}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Client Time:
+                </Typography>
+                <Typography variant="body2" fontWeight="bold">
+                  {new Date().toLocaleString()}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Browser:
+                </Typography>
+                <Typography variant="body2" fontWeight="bold">
+                  {navigator.userAgent ? navigator.userAgent.split(' ')[0] : 'Unknown'}
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+        </Grid>
+      </Grid>
+    </Box>
+  );
+};
 
 const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -264,6 +421,7 @@ const AdminPanel = () => {
     { label: 'All Shares', icon: <People />, id: 'all-shares' },
     { label: 'Virus Scanning', icon: <Security />, id: 'virus-scanning' },
     { label: 'Login Logs', icon: <History />, id: 'login-logs' },
+    { label: 'System Information', icon: <Info />, id: 'system-info' },
   ];
 
   return (
@@ -531,6 +689,9 @@ const AdminPanel = () => {
 
       {activeTab === 3 && (
         <LoginLogsAdminTab />
+      )}
+      {activeTab === 4 && (
+        <SystemInformationTab />
       )}
 
       {/* User Actions Menu */}

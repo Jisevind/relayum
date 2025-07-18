@@ -13,6 +13,7 @@ import {
   Link as MuiLink,
   Chip,
 } from '@mui/material';
+import Footer from './Footer';
 
 const Login = ({ onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -205,6 +206,7 @@ const Login = ({ onSuccess }) => {
           </Box>
         </Paper>
       </Box>
+      <Footer />
     </Container>
   );
 };
