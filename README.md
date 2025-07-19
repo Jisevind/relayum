@@ -1,4 +1,6 @@
-# Relayum
+# Relayum - Secure File Sharing Platform
+
+![Relayum Dashboard](screenshots/02_71f8d898-89db-4dfb-9f10-6272b0d40601.jpg)
 
 [![Docker Image](https://img.shields.io/badge/Docker-Available-blue?logo=docker)](https://github.com/jisevind/relayum)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -7,7 +9,11 @@
 [![React](https://img.shields.io/badge/React-18+-blue?logo=react)](https://reactjs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-blue?logo=postgresql)](https://www.postgresql.org/)
 
-A secure, self-hosted file sharing platform built with Docker. Upload, organize, and share files with encrypted storage and virus scanning capabilities.
+A modern, production-ready file sharing application built with React, Node.js, Express, and PostgreSQL. Relayum provides secure file and folder management with comprehensive sharing capabilities, user authentication, and optional virus scanning integration.
+
+## 📸 Screenshots
+
+[View all screenshots →](screenshots/)
 
 ## Overview
 
@@ -127,6 +133,17 @@ CORS_ALLOWED_ORIGINS=https://yourdomain.com
 ## Contributing
 
 This project is in early development. Contributions, bug reports, and feature requests are welcome through GitHub Issues.
+
+## ☕ Support the Project
+
+If you find Relayum useful, consider supporting its development:
+
+[![PayPal - $5](https://img.shields.io/badge/PayPal-$5-blue?logo=paypal)](https://www.paypal.com/paypalme/johanisevind/5)
+[![PayPal - $10](https://img.shields.io/badge/PayPal-$10-blue?logo=paypal)](https://www.paypal.com/paypalme/johanisevind/10)
+[![PayPal - $25](https://img.shields.io/badge/PayPal-$25-blue?logo=paypal)](https://www.paypal.com/paypalme/johanisevind/25)
+[![PayPal - Custom](https://img.shields.io/badge/PayPal-Custom%20Amount-blue?logo=paypal)](https://www.paypal.com/paypalme/johanisevind)
+
+Your support helps maintain and improve this open-source project. Thank you! 🙏
 
 ## License
 

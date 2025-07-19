@@ -1,0 +1,101 @@
+# Node.js
+node_modules
+client/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.npm
+.yarn-integrity
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+coverage
+.nyc_output
+jest.config.js
+tests/
+client/src/setupTests.js
+
+# Build artifacts
+client/build
+client/dist
+dist/
+build/
+
+# Documentation
+README.md
+CLAUDE.md
+docs/
+
+# Development files
+.git
+.gitignore
+.dockerignore
+Dockerfile*
+docker-compose*.yml
+nginx.conf
+
+# Logs
+logs/
+*.log
+client/logs/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+
+# Upload directories (runtime data)
+uploads/*
+!uploads/.gitkeep
+uploads_tmp/*
+
+# Temporary files
+/tmp/*
+temp/
+
+# Large media files
+*.bin
+*.mkv
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+*.m4v
+
+# Archives that shouldn't be in image
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+relayum-*.zip
+
+# Scripts that are not needed in production
+scripts/generate-ssl-cert.js
+scripts/test-*.js
+scripts/check-db-schema.js
+scripts/simple-db-test.js
+
+# Development dependencies
+.eslintrc*
+.prettierrc*
+package-lock.json
+yarn.lock
