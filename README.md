@@ -11,7 +11,7 @@
 
 A modern, production-ready file sharing application built with React, Node.js, Express, and PostgreSQL. Relayum provides secure file and folder management with comprehensive sharing capabilities, user authentication, and optional virus scanning integration.
 
-## 📸 Screenshots
+## Screenshots
 
 [View all screenshots →](screenshots/)
 
