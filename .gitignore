@@ -298,3 +298,6 @@ vulnerability-reports/
 # Performance test results
 performance-tests/
 load-test-results/
+
+.gitignore
+.github/
